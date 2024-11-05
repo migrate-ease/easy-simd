@@ -1,0 +1,132 @@
+/* SPDX-License-Identifier: MIT
+*
+* Permission is hereby granted, free of charge, to any person
+* obtaining a copy of this software and associated documentation
+* files (the "Software"), to deal in the Software without
+* restriction, including without limitation the rights to use, copy,
+* modify, merge, publish, distribute, sublicense, and/or sell copies
+* of the Software, and to permit persons to whom the Software is
+* furnished to do so, subject to the following conditions:
+*
+* The above copyright notice and this permission notice shall be
+* included in all copies or substantial portions of the Software.
+*
+* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+* NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS
+* BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN
+* ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+* CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+* SOFTWARE.
+*
+* Copyright:
+*   2021      Atharva Nimbalkar <atharvakn@gmail.com>
+*/
+
+#if !defined(EASYSIMD_ARM_NEON_CMLA_H)
+#define EASYSIMD_ARM_NEON_CMLA_H
+
+#include "types.h"
+
+HEDLEY_DIAGNOSTIC_PUSH
+EASYSIMD_DISABLE_UNWANTED_DIAGNOSTICS
+EASYSIMD_BEGIN_DECLS_
+
+EASYSIMD_FUNCTION_ATTRIBUTES
+easysimd_float32x2_t
+easysimd_vcmla_f32(easysimd_float32x2_t r, easysimd_float32x2_t a, easysimd_float32x2_t b) {
+  #if defined(EASYSIMD_ARM_NEON_A32V8_NATIVE) && EASYSIMD_ARCH_ARM_CHECK(8,3) && \
+      (!defined(HEDLEY_GCC_VERSION) || HEDLEY_GCC_VERSION_CHECK(9,0,0)) && \
+      (!defined(__clang__) || EASYSIMD_DETECT_CLANG_VERSION_CHECK(12,0,0))
+    return vcmla_f32(r, a, b);
+  #else
+    easysimd_float32x2_private
+      r_ = easysimd_float32x2_to_private(r),
+      a_ = easysimd_float32x2_to_private(a),
+      b_ = easysimd_float32x2_to_private(b);
+
+      #if defined(EASYSIMD_SHUFFLE_VECTOR_)
+        a_.values = EASYSIMD_SHUFFLE_VECTOR_(32, 8, a_.values, a_.values, 0, 0);
+        r_.values += b_.values * a_.values;
+      #else
+        EASYSIMD_VECTORIZE
+        for (size_t i = 0 ; i < (sizeof(r_.values) / sizeof(r_.values[0])) ; i++) {
+          r_.values[i] += b_.values[i] * a_.values[i & 2];
+        }
+      #endif
+
+    return easysimd_float32x2_from_private(r_);
+  #endif
+}
+#if defined(EASYSIMD_ARM_NEON_A32V8_ENABLE_NATIVE_ALIASES)
+  #undef vcmla_f32
+  #define vcmla_f32(r, a, b) easysimd_vcmla_f32(r, a, b)
+#endif
+
+EASYSIMD_FUNCTION_ATTRIBUTES
+easysimd_float32x4_t
+easysimd_vcmlaq_f32(easysimd_float32x4_t r, easysimd_float32x4_t a, easysimd_float32x4_t b) {
+  #if defined(EASYSIMD_ARM_NEON_A32V8_NATIVE) && EASYSIMD_ARCH_ARM_CHECK(8,3) && \
+      (!defined(HEDLEY_GCC_VERSION) || HEDLEY_GCC_VERSION_CHECK(9,0,0)) && \
+      (!defined(__clang__) || EASYSIMD_DETECT_CLANG_VERSION_CHECK(12,0,0))
+    return vcmlaq_f32(r, a, b);
+  #else
+    easysimd_float32x4_private
+      r_ = easysimd_float32x4_to_private(r),
+      a_ = easysimd_float32x4_to_private(a),
+      b_ = easysimd_float32x4_to_private(b);
+
+    #if defined(EASYSIMD_SHUFFLE_VECTOR_)
+      a_.values = EASYSIMD_SHUFFLE_VECTOR_(32, 16, a_.values, a_.values, 0, 0, 2, 2);
+      r_.values += b_.values * a_.values;
+    #else
+      EASYSIMD_VECTORIZE
+      for (size_t i = 0 ; i < (sizeof(r_.values) / sizeof(r_.values[0])) ; i++) {
+        r_.values[i] += b_.values[i] * a_.values[i & 2];
+      }
+      #endif
+
+    return easysimd_float32x4_from_private(r_);
+  #endif
+}
+#if defined(EASYSIMD_ARM_NEON_A32V8_ENABLE_NATIVE_ALIASES)
+  #undef vcmlaq_f32
+  #define vcmlaq_f32(r, a, b) easysimd_vcmlaq_f32(r, a, b)
+#endif
+
+EASYSIMD_FUNCTION_ATTRIBUTES
+easysimd_float64x2_t
+easysimd_vcmlaq_f64(easysimd_float64x2_t r, easysimd_float64x2_t a, easysimd_float64x2_t b) {
+  #if defined(EASYSIMD_ARM_NEON_A64V8_NATIVE) && EASYSIMD_ARCH_ARM_CHECK(8,3) && \
+      (!defined(HEDLEY_GCC_VERSION) || HEDLEY_GCC_VERSION_CHECK(9,0,0)) && \
+      (!defined(__clang__) || EASYSIMD_DETECT_CLANG_VERSION_CHECK(12,0,0))
+    return vcmlaq_f64(r, a, b);
+  #else
+    easysimd_float64x2_private
+      r_ = easysimd_float64x2_to_private(r),
+      a_ = easysimd_float64x2_to_private(a),
+      b_ = easysimd_float64x2_to_private(b);
+
+    #if defined(EASYSIMD_SHUFFLE_VECTOR_)
+      a_.values = EASYSIMD_SHUFFLE_VECTOR_(64, 16, a_.values, a_.values, 0, 0);
+      r_.values += b_.values * a_.values;
+    #else
+      EASYSIMD_VECTORIZE
+      for (size_t i = 0 ; i < (sizeof(r_.values) / sizeof(r_.values[0])) ; i++) {
+        r_.values[i] += b_.values[i] * a_.values[i & 2];
+      }
+    #endif
+
+    return easysimd_float64x2_from_private(r_);
+  #endif
+}
+#if defined(EASYSIMD_ARM_NEON_A32V8_ENABLE_NATIVE_ALIASES)
+  #undef vcmlaq_f64
+  #define vcmlaq_f64(r, a, b) easysimd_vcmlaq_f64(r, a, b)
+#endif
+
+EASYSIMD_END_DECLS_
+HEDLEY_DIAGNOSTIC_POP
+
+#endif /* !defined(EASYSIMD_ARM_NEON_CMLA_H) */
